@@ -1,7 +1,10 @@
 package com.nxd.voidterminal.service;
 
+import com.nxd.voidterminal.model.StaticSystemInfo;
+import com.nxd.voidterminal.model.SystemMetrics;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 /**
@@ -9,9 +12,6 @@ import reactor.core.publisher.Flux;
  * 定义了所有与指标相关的功能契约
  */
 public interface MetricsService {
-    /**
-     * 获取一个“心跳”数据流。
-     * @return 一个 Long 类型的无限数据流。
-     */
-    Flux<Long> getHeartbeatStream();
+    Flux<SystemMetrics> getMetricsStream();
+    Mono<StaticSystemInfo> getStaticSystemInfo();
 }
