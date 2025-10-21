@@ -4,17 +4,16 @@ import com.nxd.voidterminal.model.StaticSystemInfo;
 import com.nxd.voidterminal.model.SystemMetrics;
 import com.nxd.voidterminal.service.MetricsService;
 import org.springframework.stereotype.Service;
-import oshi.hardware.PhysicalMemory;
+import oshi.hardware.*;
 import oshi.software.os.OperatingSystem;
 import reactor.core.publisher.Flux;
 import oshi.SystemInfo;
-import oshi.hardware.CentralProcessor;
-import oshi.hardware.GlobalMemory;
-import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.OSFileStore;
 
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -38,11 +37,10 @@ public class MetricsServiceImpl implements MetricsService {
         log.info("MetricsService initialized successfully.");
     }
 
-    private SystemMetrics collectRealTimeMetrics() {
+    private SystemMetrics collectRealTimeMetrics() throws SocketException {
         // --- CPU 和 内存部分保持不变 ---
         final double cpuLoad = processor.getSystemCpuLoadBetweenTicks(this.oldTicks) * 100;
         this.oldTicks = processor.getSystemCpuLoadTicks();
-
         final GlobalMemory memory = hardware.getMemory();
         final long totalBytes = memory.getTotal();
         final long usedBytes = totalBytes - memory.getAvailable();
@@ -52,7 +50,6 @@ public class MetricsServiceImpl implements MetricsService {
         long totalDiskBytes = 0;
         long usedDiskBytes = 0;
         List<OSFileStore> fileStores = systemInfo.getOperatingSystem().getFileSystem().getFileStores();
-
         log.info("---------- Found {} File Stores ----------", fileStores.size());
         for (OSFileStore fs : fileStores) {
             long currentTotal = fs.getTotalSpace();
@@ -75,7 +72,18 @@ public class MetricsServiceImpl implements MetricsService {
         final double usedDiskGB = usedDiskBytes / GIGABYTE;
         final double diskUsage = (totalDiskBytes > 0) ? (usedDiskBytes * 100.0 / totalDiskBytes) : 0.0;
         // ==========================================================
-
+        // 网络总量
+        long totalBytesRecv = 0;
+        long totalBytesSent = 0;
+        for (NetworkIF net : hardware.getNetworkIFs()) {
+            // 只统计有IP地址并且地址不是回环的真实网卡
+            if (net.getIPv4addr().length > 0 || net.getIPv6addr().length > 0 && !net.queryNetworkInterface().isLoopback()) {
+                totalBytesRecv += net.getBytesRecv();
+                totalBytesSent += net.getBytesSent();
+            }
+        }
+        double totalBytesRecvGB = totalBytesRecv / GIGABYTE;
+        double totalBytesSentGB = totalBytesSent / GIGABYTE;
         return SystemMetrics.builder()
                 .cpuCores(processor.getLogicalProcessorCount())
                 .cpuUsage(round(cpuLoad, 2))
@@ -85,6 +93,8 @@ public class MetricsServiceImpl implements MetricsService {
                 .diskUsed(round(usedDiskGB, 2))
                 .diskTotal(round(totalDiskGB, 2))
                 .diskUsage(round(diskUsage, 2))
+                .networkTotalReceived(round(totalBytesRecvGB, 2))
+                .networkTotalSent(round(totalBytesSentGB, 2))
                 .build();
     }
 
@@ -109,7 +119,13 @@ public class MetricsServiceImpl implements MetricsService {
     @Override
     public Flux<SystemMetrics> getMetricsStream() {
         return Flux.interval(Duration.ofSeconds(1)).skip(1)
-                .map(tick -> collectRealTimeMetrics());
+                .handle((tick, sink) -> {
+                    try {
+                        sink.next(collectRealTimeMetrics());
+                    } catch (SocketException e) {
+                        sink.error(new RuntimeException(e));
+                    }
+                });
     }
 
     @Override

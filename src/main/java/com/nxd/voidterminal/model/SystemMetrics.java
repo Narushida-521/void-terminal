@@ -22,4 +22,13 @@ public class SystemMetrics {
     private double diskTotal;
     // 磁盘使用率(%)
     private double diskUsage;
+    // 数据总量
+    private double networkTotalReceived;
+    private double networkTotalSent;
+    // 网络延迟
+    private double networkLatency;
+    // 丢包率
+    private double packetLossRate;
+    // PING目标地址
+    private String pingTarget;
 }

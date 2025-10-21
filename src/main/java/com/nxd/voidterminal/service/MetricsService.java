@@ -2,7 +2,6 @@ package com.nxd.voidterminal.service;
 
 import com.nxd.voidterminal.model.StaticSystemInfo;
 import com.nxd.voidterminal.model.SystemMetrics;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
