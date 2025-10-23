@@ -6,7 +6,7 @@ import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
 @Configuration
-@EnableWebFlux
+//@EnableWebFlux // 如果有这行 那么static就无效
 public class corsConfig implements WebFluxConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {

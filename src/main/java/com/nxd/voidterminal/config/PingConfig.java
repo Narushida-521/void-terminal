@@ -24,7 +24,7 @@ public class PingConfig implements PingResponseHandler {
         System.out.println("--- 正在尝试加载 [Linux/macOS] 版本的 IcmpPinger... ---");
     }
 
-    @Bean(destroyMethod = "close")
+    @Bean
     public IcmpPinger icmpPinger() {
         // ！！！注意：这里仍然需要权限 (setcap) ！！！
         final IcmpPinger pinger = new IcmpPinger(this);
