@@ -22,9 +22,9 @@
 - 登录、鉴权、HTTPS、agent 与 server 之间的密钥。
 - 数据库、文件持久化、历史曲线。
 - 前端页面。
-- Spring Boot / Java / OSHI 版本升级。
 - SSH 拉取、中心去扫机器。
 - 告警、阈值、通知。
+- 继续使用预览版或已过时的依赖（例如 Spring Boot `4.0.0-M3`、OSHI 6.x、jnb-ping 2.x）。
 
 ## 架构
 
@@ -48,7 +48,7 @@ Gradle 多模块，三个模块：
 ```text
 void-terminal/
   settings.gradle          # include model, agent, server
-  build.gradle             # 统一 Java 21、Spring Boot、公共依赖
+  build.gradle             # 统一 Java 25、Spring Boot 4.1、公共依赖
   model/src/main/java/com/nxd/voidterminal/model/
   agent/src/main/java/com/nxd/voidterminal/agent/
   server/src/main/java/com/nxd/voidterminal/server/
@@ -56,7 +56,19 @@ void-terminal/
 
 根项目不再作为可启动的单体应用。现有 `src/main/java/com/nxd/voidterminal` 中的采集和 ping 代码迁入 `agent`，整理后复用，不原样堆进 server。
 
-Java 21、当前 Gradle 9.1.0、Spring Boot 4.0.0-M3 保持不变。`oshi-core`、`jnb-ping` 只留在 `agent`。
+## 版本基线（2026-08-20 最新稳定版）
+
+全部用当前最新稳定版，不保留预览版或旧大版本。BOM 能管的版本（Lombok、Reactor、JUnit）不手写旧号。
+
+| 组件 | 锁定版本 | 说明 |
+| --- | --- | --- |
+| Java toolchain | 25 | 当前 LTS；不用 21，也不用非 LTS 的 26 |
+| Gradle wrapper | 9.7.1 | 当前最新稳定 wrapper |
+| Spring Boot | 4.1.0 | 当前最新稳定，含 Gradle 插件 |
+| oshi-core | 7.5.0 | 只给 `agent`；按 7.x API 改采集代码 |
+| jnb-ping | 5.0.0 | 只给 `agent` 的 POSIX ping；按 5.x API 改 |
+
+实现时若 Maven Central 已有更新的**同系列稳定补丁**（例如 `4.1.1`、`7.5.1`），用更新的补丁。不降回 3.x / 4.0.x-M / 6.x。
 
 ## 数据模型
 
@@ -230,4 +242,5 @@ SSE：`MediaType.TEXT_EVENT_STREAM`。多机事件名 `nodes`，单机事件名 
 - 对外接口和共享模型带完整泛型。
 - 构造器注入，不用 `@Resource`。
 - 类名使用 PascalCase（现有 `corsConfig` 迁到 server 时改成 `CorsConfig`）。
-- 不顺手做版本升级或加新监控项（网卡速率、进程列表等）。
+- 依赖按「版本基线」使用最新稳定版；采集代码跟 OSHI 7 / jnb-ping 5 的 API 走，不迁就旧调用。
+- 不顺手加新监控项（网卡速率、进程列表等）。
