@@ -1,40 +1,20 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.0-M3'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '4.1.0' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
 }
 
-group = 'com.nxd'
-version = 'v1.0.2'
-description = 'VoidTerminal'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+subprojects {
+    apply plugin: 'java'
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
     }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
+    repositories {
+        mavenCentral()
     }
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'io.projectreactor:reactor-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'com.github.oshi:oshi-core:6.9.0'
-    implementation 'com.zaxxer:jnb-ping:2.0.1'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
 }
